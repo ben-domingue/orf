@@ -6,7 +6,7 @@ pf_selection<-function(df,
                        timelim=365+90,
                        ymax=35,
                        txt=list(`2017`='2017',`2018`='2018',`2019`='2019',`2020`='2020'),
-                       poly=TRUE
+                       poly=TRUE,...
                        ) {
     for (y in years) {
         #tmp<-df[df$ay==y & !is.na(df$ay),]
@@ -30,9 +30,9 @@ pf_selection<-function(df,
         co<-coef(m)
         y0<-s %*% matrix(co,ncol=1) #co[1]*s[,1]+co[2]*s[,2]+co[3]*s[,3]
         y0<-as.numeric(y0)
-        lines(t,y0,lwd=3)
+        lines(t,y0,lwd=3,...)
         #text(t[1],y0[1],pos=2,y,cex=.4)
-        text(t[length(t)],y0[length(y0)],pos=4,y,cex=1,labels=txt[[as.character(y)]],xpd=TRUE)
+        #text(t[length(t)],y0[length(y0)],pos=4,y,cex=1,labels=txt[[as.character(y)]],xpd=TRUE)
     }
     ##polygons
     if (poly) {
@@ -53,33 +53,40 @@ group<-list()
 covid.ids<-unique(df$id[df$covid])
 id0<-unique(df$id[df$ay==2019])
 group$`No obs`<-id0[!(id0 %in% covid.ids)]
-group$`Obs in 2020`<-intersect(id0,unique(df$id[df$ay==2020]))
-group$`Obs in 2019`<-intersect(id0,unique(df$id[df$ay==2019 & df$covid]))
+group$`Obs in 2020F`<-intersect(id0,unique(df$id[df$ay==2020]))
+group$`Obs in 2020S`<-intersect(id0,unique(df$id[df$ay==2019 & df$covid]))
                      
 ##
-pdf("/home/bd/Dropbox/Apps/Overleaf/ORF-covid/selection.pdf",width=7,height=4)
-par(mfrow=c(1,2),mgp=c(2,1,0),mar=c(3,3,1,5),oma=rep(.5,4))
+pdf("/home/bd/Dropbox/projects/orf/docs/orf_covid_tables_figures/si_fig5.pdf",width=6.5,height=6)
+#pdf("/home/bd/Dropbox/Apps/Overleaf/ORF-covid/szelection.pdf",width=7,height=7)
+par(mfrow=c(4,2),mgp=c(2,1,0),mar=c(3,3,1,1),oma=rep(.5,4))
 ##
-plot(NULL,xlim=c(0,1.03*(365+90)),
-     ylim=c(-1,45),
-     xaxt='n',ylab="Growth",xlab="Days since Sept 1 of year",bty='n')
-axis(side=1,at=seq(0,365+90,by=90))
-for (i in 1:3) {
+cols<-c("black","red","blue")
+for (grade in 1:4) {
+    df.gr<-df[df$grade==grade,]
+    plot(NULL,xlim=c(0,1.03*(365+90)),
+         ylim=c(-1,65),
+         xaxt='n',ylab="Growth",xlab="Days since September 1 of academic year",bty='n')
+    axis(side=1,at=seq(0,365+90,by=90))
+    legend("topleft",bty='n',title='2018-19',legend=paste("Grade",grade))
+    for (i in 1:3) {
+        ##
+        txt=list(names(group)[i])
+        names(txt)[1]<-'2018'
+        pf_selection(df.gr[df.gr$id %in% group[[i]],],years=2018,nspl=4,ymax=30,txt=txt,poly=(i==1),col=cols[i])
+    }
     ##
-    txt=list(names(group)[i])
-    names(txt)[1]<-'2018'
-    pf_selection(df[df$id %in% group[[i]],],years=2018,nspl=4,ymax=30,txt=txt,poly=(i==1))
-    legend("topleft",bty='n',legend=2018)
-}
-plot(NULL,xlim=c(0,1.03*(200)),
-     ylim=c(-1,45),
-     xaxt='n',ylab="Growth",xlab="Days since Sept 1 of year",bty='n')
-axis(side=1,at=seq(0,365+90,by=90))
-for (i in 1:3) {
-    txt=list(names(group)[i])
-    names(txt)[1]<-'2019'
-    pf_selection(df[!df$covid & df$id %in% group[[i]],],years=2019,nspl=4,ymax=30,txt=txt)
-    legend("topleft",bty='n',legend=2019)
+    plot(NULL,xlim=c(0,1.03*(200)),
+         ylim=c(-1,32),
+         xaxt='n',ylab="Growth",xlab="Days since September 1 of academic year",bty='n')
+    axis(side=1,at=seq(0,365+90,by=90))
+    legend("topleft",bty='n',title='2019-20',legend=paste("Grade",grade))
+    for (i in 1:3) {
+        txt=list(names(group)[i])
+        names(txt)[1]<-'2019'
+        pf_selection(df.gr[!df.gr$covid & df.gr$id %in% group[[i]],],years=2019,nspl=4,ymax=30,txt=txt,col=cols[i])
+    }
+    if (grade==1) legend("bottomright",bty='n',title="Observations during COVID-19",fill=cols,legend=c("None","Fall 2020-21","Spring 2019-2020"),cex=.7)
 }
 dev.off()
 
